@@ -1,6 +1,8 @@
 import argparse
 import csv
 
+# action and level are necesary
+
 def build_parser():
 
     parser = argparse.ArgumentParser(
@@ -37,3 +39,131 @@ def build_parser():
 def output_filename_for(input_file: str) -> str:
     base = input_file.rsplit(".", 1)[0]
     return base + "_report.csv"
+
+def main():
+    parser = build_parser()
+    args = parser.parse_args()
+
+    input_file = args.input_file
+    output_file = args.output if args.output else output_filename_for(input_file)
+
+    valid_lines = 0
+    skipped_lines = 0
+
+    valid_levels = {"info", "warn", "error"}
+    levels = {"info": 0, "warn": 0, "error": 0}
+    actions = {}
+
+    try:
+        with open(input_file, "r") as file:
+
+            for lineno, line in enumerate(file, start=1):
+                if not line.strip():
+                    print(f"Empty line: Skipping {repr(lineno)}")
+                    skipped_lines += 1
+                    continue
+
+                tokens = line.split()
+
+                # Validate that the line is valid
+                if len(tokens) < 2:
+                    if args.strict:
+                        print(f"Invalid format (expected date category): {repr(lineno)}")
+                        raise SystemExit(1)
+                    else:
+                        print(f"Invalid format (expected date category): Skipped line {repr(lineno)}")
+                        skipped_lines += 1
+                        continue
+
+                date_token = tokens[0].strip()
+
+                # Check that the first token is date + validity
+                if len(date_token) != 10 or date_token.count("-") != 2:
+                    if args.strict:
+                        print(f"Invalid date format (expected YYYY-MM-DD): {repr(lineno)}")
+                        raise SystemExit(1)
+                    else:
+                        print(f"Invalid date format (expected YYYY-MM-DD): Skipped line {repr(lineno)}")
+                        skipped_lines += 1
+                        continue
+
+                # Check that second token is valid metric
+                level_token = tokens[1].strip().lower()
+
+                if level_token not in valid_levels:
+                    if args.strict:
+                        print(f"Invalid metric (expected info, warn, error): {repr(lineno)}")
+                        raise SystemExit(1)
+                    else:
+                        print(f"Invalid metric (expected info, warn, error): Skipped line {repr(lineno)}")
+                        skipped_lines += 1
+                        continue
+
+                fields = {}
+                for token in tokens[2:]:
+                    if "=" not in token:
+                        continue
+                    else:
+                        key, value = token.split("=", 1)
+                        fields[key] = value
+
+                if not fields.get("action"):
+                    if args.strict:
+                        print(f"Invalid metric, action must be included: {repr(lineno)}")
+                        raise SystemExit(1)
+                    else:
+                        print(f"Invalid metric, action must be included: Skipped line {repr(lineno)}")
+                        skipped_lines += 1
+                        continue
+
+                action = fields.get("action")
+                if action not in actions:
+                    actions[action] = 0
+
+                actions[action] += 1
+                levels[level_token] += 1
+                valid_lines += 1
+    
+    except FileNotFoundError:
+        print(f"File not found: {input_file}")
+        raise SystemExit(1)
+    
+    if not actions:
+        print("No valid action data found.")
+        raise SystemExit(1)
+    
+    sorted_actions = sorted(
+        actions.items(),
+        key=lambda pair: (-pair[1], pair[0])
+    )
+
+    top_actions = sorted_actions[:3]
+    
+    if args.dry_run:
+        print("--- Dry Run ---")
+        print(f"Lines skipped: {skipped_lines}")
+        print(f"Valid lines: {valid_lines}")
+
+        for level, total in levels.items():
+            print(f"{level}: {total}")
+
+        print("--- Top Actions ---")
+        for action, count in top_actions:
+            print(f"{action}: {count}")
+        return
+    
+    with open(output_file, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["catergory", "total"])
+        writer.writerow(["skipped_lines", skipped_lines])
+        writer.writerow(["valid_lines", valid_lines])
+        for level, total in levels.items():
+            writer.writerow([level, total])
+        for action, total in top_actions:
+            writer.writerow([action, total])
+
+        print(f"Wrote report: {output_file}")
+            
+
+if __name__ == "__main__":
+    main()
