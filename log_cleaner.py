@@ -68,10 +68,10 @@ def main():
                 # Validate that the line is valid
                 if len(tokens) < 2:
                     if args.strict:
-                        print(f"Invalid format (expected date category): {repr(lineno)}")
+                        print(f"Line {lineno}: Invalid format (expected date category): {repr(line)}")
                         raise SystemExit(1)
                     else:
-                        print(f"Invalid format (expected date category): Skipped line {repr(lineno)}")
+                        print(f"Line {lineno}: Invalid format (expected date category): Skipped line {repr(line)}")
                         skipped_lines += 1
                         continue
 
@@ -80,10 +80,10 @@ def main():
                 # Check that the first token is date + validity
                 if len(date_token) != 10 or date_token.count("-") != 2:
                     if args.strict:
-                        print(f"Invalid date format (expected YYYY-MM-DD): {repr(lineno)}")
+                        print(f"Line {lineno}: Invalid date format (expected YYYY-MM-DD): {repr(line)}")
                         raise SystemExit(1)
                     else:
-                        print(f"Invalid date format (expected YYYY-MM-DD): Skipped line {repr(lineno)}")
+                        print(f"Line {lineno}: Invalid date format (expected YYYY-MM-DD): Skipped line {repr(line)}")
                         skipped_lines += 1
                         continue
 
@@ -92,10 +92,10 @@ def main():
 
                 if level_token not in valid_levels:
                     if args.strict:
-                        print(f"Invalid metric (expected info, warn, error): {repr(lineno)}")
+                        print(f"Line {lineno}: Invalid metric (expected info, warn, error): {repr(line)}")
                         raise SystemExit(1)
                     else:
-                        print(f"Invalid metric (expected info, warn, error): Skipped line {repr(lineno)}")
+                        print(f"Line {lineno}: Invalid metric (expected info, warn, error): Skipped line {repr(line)}")
                         skipped_lines += 1
                         continue
 
@@ -109,10 +109,10 @@ def main():
 
                 if not fields.get("action"):
                     if args.strict:
-                        print(f"Invalid metric, action must be included: {repr(lineno)}")
+                        print(f"Line {lineno}: Invalid metric, action must be included: {repr(line)}")
                         raise SystemExit(1)
                     else:
-                        print(f"Invalid metric, action must be included: Skipped line {repr(lineno)}")
+                        print(f"Line {lineno}: Invalid metric, action must be included: Skipped line {repr(line)}")
                         skipped_lines += 1
                         continue
 
