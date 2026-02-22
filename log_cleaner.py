@@ -49,6 +49,7 @@ def main():
 
     valid_lines = 0
     skipped_lines = 0
+    blank_lines = 0
 
     valid_levels = {"info", "warn", "error"}
     levels = {"info": 0, "warn": 0, "error": 0}
@@ -59,8 +60,7 @@ def main():
 
             for lineno, line in enumerate(file, start=1):
                 if not line.strip():
-                    print(f"Empty line: Skipping {repr(lineno)}")
-                    skipped_lines += 1
+                    blank_lines += 1
                     continue
 
                 tokens = line.split()
