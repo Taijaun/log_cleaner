@@ -52,14 +52,12 @@ def main():
 
     parser = build_parser()
     args = parser.parse_args()
-    
+
     logging.basicConfig(
         level= logging.DEBUG if args.verbose else logging.INFO,
         format="%(levelname)s: %(message)s"
     )
 
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
 
     input_file = args.input_file
     output_file = args.output if args.output else output_filename_for(input_file)
@@ -82,6 +80,7 @@ def main():
                     continue
 
                 tokens = line.split()
+                logging.debug("Line %d tokens=%s", lineno, tokens)
 
                 # Validate that the line is valid
                 if len(tokens) < 2:
@@ -144,8 +143,10 @@ def main():
                     else:
                         key, value = token.split("=", 1)
                         key = key.strip().lower()
-                        value = value.strip()
+                        value = value.strip().lower()
                         fields[key] = value
+
+                logging.debug("Line %d tokens=%s", lineno, tokens)
 
                 if not fields.get("action"):
                     if args.strict:
@@ -169,7 +170,7 @@ def main():
                 valid_lines += 1
     
     except FileNotFoundError:
-        logging.error("File not found: {input_file}")
+        logging.error("File not found: %s", input_file)
         raise SystemExit(1)
     
     if not actions:
@@ -191,7 +192,7 @@ def main():
         logging.info("Total lines: %d", total_lines)
 
         for level, total in levels.items():
-            logging.info("%d: %d", level, total)
+            logging.info("%s: %d", level, total)
 
         logging.info("--- Top Actions ---")
         for action, count in top_actions:
@@ -212,7 +213,7 @@ def main():
         for action, total in top_actions:
             writer.writerow([action, total])
 
-        print(f"Wrote report: {output_file}")
+        logging.info("Wrote report: %s", output_file)
             
 
 if __name__ == "__main__":
