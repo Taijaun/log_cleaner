@@ -51,8 +51,9 @@ def main():
     skipped_lines = 0
     blank_lines = 0
 
-    valid_levels = {"info", "warn", "error"}
+    
     levels = {"info": 0, "warn": 0, "error": 0}
+    valid_levels = set(levels)
     actions = {}
 
     try:
@@ -105,6 +106,8 @@ def main():
                         continue
                     else:
                         key, value = token.split("=", 1)
+                        key = key.strip().lower()
+                        value = value.strip()
                         fields[key] = value
 
                 if not fields.get("action"):
@@ -156,12 +159,15 @@ def main():
     
     with open(output_file, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["catergory", "total"])
+        writer.writerow(["category", "total"])
         writer.writerow(["skipped_lines", skipped_lines])
         writer.writerow(["valid_lines", valid_lines])
         writer.writerow(["total_lines", total_lines])
+        writer.writerow(["--levels--", ""])
         for level, total in levels.items():
             writer.writerow([level, total])
+
+        writer.writerow(["--top_actions--", ""])
         for action, total in top_actions:
             writer.writerow([action, total])
 
