@@ -138,11 +138,13 @@ def main():
     )
 
     top_actions = sorted_actions[:3]
+    total_lines = valid_lines + skipped_lines
     
     if args.dry_run:
         print("--- Dry Run ---")
         print(f"Lines skipped: {skipped_lines}")
         print(f"Valid lines: {valid_lines}")
+        print(f"Total lines: {total_lines}")
 
         for level, total in levels.items():
             print(f"{level}: {total}")
@@ -157,6 +159,7 @@ def main():
         writer.writerow(["catergory", "total"])
         writer.writerow(["skipped_lines", skipped_lines])
         writer.writerow(["valid_lines", valid_lines])
+        writer.writerow(["total_lines", total_lines])
         for level, total in levels.items():
             writer.writerow([level, total])
         for action, total in top_actions:
