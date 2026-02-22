@@ -48,13 +48,15 @@ def output_filename_for(input_file: str) -> str:
     return base + "_report.csv"
 
 def main():
+    
+
+    parser = build_parser()
+    args = parser.parse_args()
+    
     logging.basicConfig(
         level= logging.DEBUG if args.verbose else logging.INFO,
         format="%(levelname)s: %(message)s"
     )
-
-    parser = build_parser()
-    args = parser.parse_args()
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -84,10 +86,18 @@ def main():
                 # Validate that the line is valid
                 if len(tokens) < 2:
                     if args.strict:
-                        logging.error(f"Line {lineno}: Invalid format (expected date category): {repr(line)}")
+                        logging.error(
+                            "Line %d: invalid format (expected <date> <level> ...). Content=%r",
+                            lineno,
+                            line
+                            )
                         raise SystemExit(1)
                     else:
-                        logging.warning(f"Line {lineno}: Invalid format (expected date category): Skipped line {repr(line)}")
+                        logging.warning(
+                            "Line %d: invalid format (expected <date> <level> ...). Content=%r",
+                            lineno,
+                            line
+                            )
                         skipped_lines += 1
                         continue
 
@@ -96,10 +106,16 @@ def main():
                 # Check that the first token is date + validity
                 if len(date_token) != 10 or date_token.count("-") != 2:
                     if args.strict:
-                        logging.error(f"Line {lineno}: Invalid date format (expected YYYY-MM-DD): {repr(line)}")
+                        logging.error("Line %d: invalid date format (expected YYYY-MM-DD). Content=%r",
+                                      lineno,
+                                      line
+                                      )
                         raise SystemExit(1)
                     else:
-                        logging.warning(f"Line {lineno}: Invalid date format (expected YYYY-MM-DD): Skipped line {repr(line)}")
+                        logging.warning("Line %d: invalid date format (expected YYYY-MM-DD). Content=%r",
+                                      lineno,
+                                      line
+                                      )
                         skipped_lines += 1
                         continue
 
@@ -108,10 +124,16 @@ def main():
 
                 if level_token not in valid_levels:
                     if args.strict:
-                        logging.error(f"Line {lineno}: Invalid metric (expected info, warn, error): {repr(line)}")
+                        logging.error("Line %d: invalid metric (expected info, warn, error). Content=%r",
+                                      lineno,
+                                      line
+                                      )
                         raise SystemExit(1)
                     else:
-                        logging.warning(f"Line {lineno}: Invalid metric (expected info, warn, error): Skipped line {repr(line)}")
+                        logging.warning("Line %d: invalid metric (expected info, warn, error). Content=%r",
+                                      lineno,
+                                      line
+                                      )
                         skipped_lines += 1
                         continue
 
@@ -127,10 +149,14 @@ def main():
 
                 if not fields.get("action"):
                     if args.strict:
-                        logging.error(f"Line {lineno}: Invalid metric, action must be included: {repr(line)}")
+                        logging.error("Line %d: invalid metric, action must be included. Content=%r",
+                                      lineno,
+                                      line)
                         raise SystemExit(1)
                     else:
-                        logging.warning(f"Line {lineno}: Invalid metric, action must be included: Skipped line {repr(line)}")
+                        logging.warning("Line %d: invalid metric, action must be included. Content=%r",
+                                      lineno,
+                                      line)
                         skipped_lines += 1
                         continue
 
@@ -143,7 +169,7 @@ def main():
                 valid_lines += 1
     
     except FileNotFoundError:
-        logging.error(f"File not found: {input_file}")
+        logging.error("File not found: {input_file}")
         raise SystemExit(1)
     
     if not actions:
@@ -160,16 +186,16 @@ def main():
     
     if args.dry_run:
         logging.info("--- Dry Run ---")
-        logging.info(f"Lines skipped: {skipped_lines}")
-        logging.info(f"Valid lines: {valid_lines}")
-        logging.info(f"Total lines: {total_lines}")
+        logging.info("Lines skipped: %d", skipped_lines)
+        logging.info("Valid lines: %d", valid_lines)
+        logging.info("Total lines: %d", total_lines)
 
         for level, total in levels.items():
-            logging.info(f"{level}: {total}")
+            logging.info("%d: %d", level, total)
 
         logging.info("--- Top Actions ---")
         for action, count in top_actions:
-            logging.info(f"{action}: {count}")
+            logging.info("%s: %d", action, count)
         return
     
     with open(output_file, "w", newline="") as f:
