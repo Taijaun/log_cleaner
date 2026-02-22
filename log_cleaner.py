@@ -1,5 +1,6 @@
 import argparse
 import csv
+import logging
 
 # action and level are necesary
 
@@ -34,6 +35,12 @@ def build_parser():
         help="Path to output CSV file (default: <input>_report.csv)"
     )
 
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable debug-level logging."
+    )
+
     return parser
 
 def output_filename_for(input_file: str) -> str:
@@ -41,8 +48,16 @@ def output_filename_for(input_file: str) -> str:
     return base + "_report.csv"
 
 def main():
+    logging.basicConfig(
+        level= logging.DEBUG if args.verbose else logging.INFO,
+        format="%(levelname)s: %(message)s"
+    )
+
     parser = build_parser()
     args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     input_file = args.input_file
     output_file = args.output if args.output else output_filename_for(input_file)
@@ -69,10 +84,10 @@ def main():
                 # Validate that the line is valid
                 if len(tokens) < 2:
                     if args.strict:
-                        print(f"Line {lineno}: Invalid format (expected date category): {repr(line)}")
+                        logging.error(f"Line {lineno}: Invalid format (expected date category): {repr(line)}")
                         raise SystemExit(1)
                     else:
-                        print(f"Line {lineno}: Invalid format (expected date category): Skipped line {repr(line)}")
+                        logging.warning(f"Line {lineno}: Invalid format (expected date category): Skipped line {repr(line)}")
                         skipped_lines += 1
                         continue
 
@@ -81,10 +96,10 @@ def main():
                 # Check that the first token is date + validity
                 if len(date_token) != 10 or date_token.count("-") != 2:
                     if args.strict:
-                        print(f"Line {lineno}: Invalid date format (expected YYYY-MM-DD): {repr(line)}")
+                        logging.error(f"Line {lineno}: Invalid date format (expected YYYY-MM-DD): {repr(line)}")
                         raise SystemExit(1)
                     else:
-                        print(f"Line {lineno}: Invalid date format (expected YYYY-MM-DD): Skipped line {repr(line)}")
+                        logging.warning(f"Line {lineno}: Invalid date format (expected YYYY-MM-DD): Skipped line {repr(line)}")
                         skipped_lines += 1
                         continue
 
@@ -93,10 +108,10 @@ def main():
 
                 if level_token not in valid_levels:
                     if args.strict:
-                        print(f"Line {lineno}: Invalid metric (expected info, warn, error): {repr(line)}")
+                        logging.error(f"Line {lineno}: Invalid metric (expected info, warn, error): {repr(line)}")
                         raise SystemExit(1)
                     else:
-                        print(f"Line {lineno}: Invalid metric (expected info, warn, error): Skipped line {repr(line)}")
+                        logging.warning(f"Line {lineno}: Invalid metric (expected info, warn, error): Skipped line {repr(line)}")
                         skipped_lines += 1
                         continue
 
@@ -112,10 +127,10 @@ def main():
 
                 if not fields.get("action"):
                     if args.strict:
-                        print(f"Line {lineno}: Invalid metric, action must be included: {repr(line)}")
+                        logging.error(f"Line {lineno}: Invalid metric, action must be included: {repr(line)}")
                         raise SystemExit(1)
                     else:
-                        print(f"Line {lineno}: Invalid metric, action must be included: Skipped line {repr(line)}")
+                        logging.warning(f"Line {lineno}: Invalid metric, action must be included: Skipped line {repr(line)}")
                         skipped_lines += 1
                         continue
 
@@ -128,11 +143,11 @@ def main():
                 valid_lines += 1
     
     except FileNotFoundError:
-        print(f"File not found: {input_file}")
+        logging.error(f"File not found: {input_file}")
         raise SystemExit(1)
     
     if not actions:
-        print("No valid action data found.")
+        logging.error("No valid action data found.")
         raise SystemExit(1)
     
     sorted_actions = sorted(
@@ -144,17 +159,17 @@ def main():
     total_lines = valid_lines + skipped_lines
     
     if args.dry_run:
-        print("--- Dry Run ---")
-        print(f"Lines skipped: {skipped_lines}")
-        print(f"Valid lines: {valid_lines}")
-        print(f"Total lines: {total_lines}")
+        logging.info("--- Dry Run ---")
+        logging.info(f"Lines skipped: {skipped_lines}")
+        logging.info(f"Valid lines: {valid_lines}")
+        logging.info(f"Total lines: {total_lines}")
 
         for level, total in levels.items():
-            print(f"{level}: {total}")
+            logging.info(f"{level}: {total}")
 
-        print("--- Top Actions ---")
+        logging.info("--- Top Actions ---")
         for action, count in top_actions:
-            print(f"{action}: {count}")
+            logging.info(f"{action}: {count}")
         return
     
     with open(output_file, "w", newline="") as f:
