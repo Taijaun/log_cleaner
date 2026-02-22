@@ -33,3 +33,7 @@ def build_parser():
     )
 
     return parser
+
+def output_filename_for(input_file: str) -> str:
+    base = input_file.rsplit(".", 1)[0]
+    return base + "_report.csv"
